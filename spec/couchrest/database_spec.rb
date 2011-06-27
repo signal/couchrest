@@ -196,6 +196,24 @@ describe CouchRest::Database do
       end
     end
 
+    describe "with many documents" do
+      before(:each) do
+        timeout_db_name = TESTDB + "-timeout"
+        @timeout_db = @cr.database(timeout_db_name)
+        @timeout_db = @cr.create_db(timeout_db_name) rescue nil
+        @docs = []
+        12500.times { |i| @docs << {"wild" => "and random"} }
+      end
+      after(:each) do
+        @timeout_db.delete! rescue nil
+      end
+      it "should let the user specify a timeout" do
+        lambda do
+          @timeout_db.bulk_save(@docs, false, :timeout => 1, :open_timeout => 1)
+        end.should raise_error(RestClient::Exception, 'Request Timeout')
+      end
+    end
+
     it "should empty the bulk save cache if no documents are given" do
       @db.save_doc({"_id" => "bulk_cache_1", "val" => "test"}, true)
       lambda do
